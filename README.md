@@ -1,27 +1,5 @@
-## 🔍 Object Detection and Recognition
+# Object-Detection-and-Tracking
+We had developed a project of object detection with my friends of different college. using Python and HTML.
 
-A real-time object detection and recognition system powered by YOLOv8 
-and OpenCV. This project can detect and identify multiple objects in 
-images or live video streams with high accuracy and speed.
+if you want to use it you need the templates and some more things like venv in python.
 
-### 🚀 Features
-- Real-time object detection using YOLOv8
-- Supports image and video input
-- Bounding box visualization with class labels
-- Fast and lightweight inference
-
-### 🛠️ Tech Stack
-- Python
-- YOLOv8 (Ultralytics)
-- OpenCV
-- Flask (Web Interface)
-
-### ⚙️ Installation
-1. Clone the repository
-   git clone https://github.com/Hardik-1874/Object-Detection-and-Recognition
-
-2. Install dependencies
-   pip install -r requirements.txt
-
-3. Run the app
-   python app.py
