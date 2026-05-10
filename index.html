@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>YOLOv8 + React + Socket.IO Demo (Native Resolution)</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    #root {
+      width: 100%;
+      max-width: 100%;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    /* The canvas internal dimensions match the video stream.
+       CSS makes it responsive without distorting the aspect ratio. */
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    #sidePanel {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #fafafa;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1>YOLOv8 + React + Socket.IO Demo (Native Resolution)</h1>
+  <!-- Main React container -->
+  <div id="root"></div>
+
+  <!-- Socket.IO client -->
+  <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+  <!-- pako for zlib decompression (optional) -->
+  <script src="https://cdn.jsdelivr.net/npm/pako@2.0.4/dist/pako.min.js"></script>
+  <!-- React and ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel for inline JSX (development only) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const socket = io('http://localhost:5000', { transports: ['websocket'] });
+
+    function VideoCanvas() {
+      const canvasRef = React.useRef(null);
+      const [detections, setDetections] = React.useState([]);
+
+      React.useEffect(() => {
+        socket.on('video_frame', (msg) => {
+          const b64Data = msg.data;
+          if (!b64Data) return;
+
+          const url = `data:image/jpeg;base64,${b64Data}`;
+          const img = new Image();
+          img.onload = () => {
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Draw the image without scaling it; the canvas's internal dimensions match the native resolution.
+            ctx.drawImage(img, 0, 0);
+          };
+          img.src = url;
+        });
+
+        socket.on('detections', (detArray) => {
+          setDetections(detArray);
+        });
+
+        return () => {
+          socket.off('video_frame');
+          socket.off('detections');
+        };
+      }, []);
+
+      function handleCanvasClick(e) {
+        const canvas = canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        fetch("/select_object", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ click_x: Math.floor(clickX), click_y: Math.floor(clickY) })
+        })
+          .then(res => res.json())
+          .then(data => {
+            console.log("[INFO] Selected object ID:", data.selected_object_id);
+          })
+          .catch(e => console.error("[ERROR] Error selecting object:", e));
+      }
+
+      return (
+        <div>
+          {/* Adjust the canvas dimensions if needed.
+              Here, we assume a native resolution of 1280x720; update as appropriate. */}
+          <canvas
+            ref={canvasRef}
+            width="640"
+            height="480"
+            onClick={handleCanvasClick}
+          />
+          <div id="sidePanel">
+            <h3>Detections</h3>
+            {detections.map((det, idx) => (
+              <div key={idx}>
+                {det.class_name} ({(det.conf * 100).toFixed(1)}%)
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      return (
+        <div>
+          <p>React component for displaying YOLOv8 processed video at its native aspect ratio.</p>
+          <VideoCanvas />
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
