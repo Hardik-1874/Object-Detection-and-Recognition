@@ -18,7 +18,7 @@ images or live video streams with high accuracy and speed.
 
 ### ⚙️ Installation
 1. Clone the repository
-   git clone https://github.com/Hardik-1874/hardikpatel18.git
+   git clone https://github.com/Hardik-1874/Object-Detection-and-Recognition
 
 2. Install dependencies
    pip install -r requirements.txt
